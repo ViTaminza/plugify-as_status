@@ -1,0 +1,28 @@
+{
+	"$schema": "https://raw.githubusercontent.com/untrustedmodders/plugify/refs/heads/main/schemas/plugin.schema.json",
+	"version": "${AS_STATUS_VERSION}",
+	"name": "as_status",
+	"description": "Player list command for the admin_system plugin, ported from the Pisex Metamod module '[AS] Status'. Prints 'ID. Name - SteamID64' for every non-bot slot to the console command 'mm_status' (server console always allowed, a player needs '@admin/status') and to chat via the chat command '!status' (needs '@admin/status'). No phrases: the original printed literal English text. No exported methods.",
+	"author": "Pisex, ported to Plugify",
+	"website": "https://github.com/untrustedmodders/plugify",
+	"license": "GPL-3.0",
+	"entry": "bin/as_status",
+	"platforms": [],
+	"language": "cpp",
+	"dependencies": [
+		{
+			"name": "s2sdk",
+			"constraints": ">=2.18.2"
+		},
+		{
+			"name": "admin_system",
+			"constraints": ">=1.0.0"
+		},
+		{
+			"name": "hudmenu",
+			"constraints": ">=1.0.0",
+			"optional": true
+		}
+	],
+	"methods": []
+}
