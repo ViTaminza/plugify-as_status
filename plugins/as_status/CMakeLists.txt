@@ -4,12 +4,15 @@
 #
 #   plugify-as_status  the plugin shared library (entry "bin/as_status" -> bin/libas_status.so)
 #
-# Like every admin_system module it links:
-#   * pisexcompat (which brings the s2sdk binding globals through its own s2sdk_bindings link),
-#   * the generated admin_system consumer bindings (__admin_system_*) and the hand-written
+# Pure s2sdk: no s2guard and no pisexcompat (docs/PLUGIN_STANDARD.md §7). The guards of
+# handoff/weaponskins/PITFALLS.md live in src/plugin.cpp itself — the B1/B2 map gate, the C2
+# client checks and the C11 command ownership rules. Like every admin_system module the .so
+# compiles the binding globals the plugify module fills at load time:
+#   * s2sdk (__s2sdk_*),
+#   * the generated admin_system consumer bindings (__admin_system_*) plus the hand-written
 #     consumer wrapper include/admin_api.hpp.
 
-set(AS_STATUS_VERSION "1.0.2")
+set(AS_STATUS_VERSION "1.2.0")
 
 # The generated admin_system binding globals (__admin_system_*) have to be compiled into every
 # consumer plugin; the admin_system plugin directory already builds them as an object library
@@ -25,18 +28,18 @@ endif()
 
 add_library(plugify-as_status SHARED
         src/plugin.cpp
+        $<TARGET_OBJECTS:s2sdk_bindings>
         $<TARGET_OBJECTS:admin_system_bindings_obj>
 )
 target_include_directories(plugify-as_status PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
-# SYSTEM: the generated admin_system/plg headers and admin_api.hpp are not ours to fix; their
-# warnings must not fail -Werror on our sources.
+# SYSTEM: the generated admin_system/plg/s2sdk headers and admin_api.hpp are not ours to fix;
+# their warnings must not fail -Werror on our sources.
 target_include_directories(plugify-as_status SYSTEM PRIVATE
         "${CMAKE_SOURCE_DIR}/plugins/admin_system/include"
         "${CMAKE_SOURCE_DIR}/plugins/admin_system/include/external/plugify/include"
         "${CMAKE_SOURCE_DIR}/sdk/include")
-# pisexcompat PUBLIC-links s2sdk_bindings, so the __s2sdk_* globals are in the plugin as well.
 target_link_libraries(plugify-as_status PRIVATE
-        pisexcompat
+        plugify_sdk
         -static-libstdc++ -static-libgcc
 )
 target_compile_options(plugify-as_status PRIVATE -Wall -Wextra -Werror)
@@ -57,3 +60,37 @@ configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/as_status.pplugin.in"
         "${CMAKE_CURRENT_BINARY_DIR}/as_status.pplugin"
 )
+
+# --- tests ---------------------------------------------------------------------
+# as_status_tests: engine-free. The plugin TU is compiled into the test (its handlers live in an
+# anonymous namespace) and the __s2sdk_* / __admin_system_* binding globals are recording fakes:
+# map gate, client guards, command sources, and the unload rules. Written into build/tests so
+# ../test.sh runs it with the rest (*_tests convention).
+#
+# The top-level CMakeLists declares the PLUGIFY_PORT_TESTS option *after* the plugin directories,
+# so on a first configure it is not defined here yet: default it to the same ON. An explicit
+# -DPLUGIFY_PORT_TESTS=OFF is already in the cache and still wins.
+if(NOT DEFINED PLUGIFY_PORT_TESTS)
+    set(PLUGIFY_PORT_TESTS ON)
+endif()
+if(PLUGIFY_PORT_TESTS)
+    add_executable(as_status_tests
+            tests/as_status_tests.cpp
+            $<TARGET_OBJECTS:s2sdk_bindings>
+            $<TARGET_OBJECTS:admin_system_bindings_obj>
+    )
+    target_include_directories(as_status_tests SYSTEM PRIVATE
+            "${CMAKE_SOURCE_DIR}/plugins/admin_system/include"
+            "${CMAKE_SOURCE_DIR}/plugins/admin_system/include/external/plugify/include"
+            "${CMAKE_SOURCE_DIR}/sdk/include")
+    target_link_libraries(as_status_tests PRIVATE plugify_sdk -static-libstdc++ -static-libgcc)
+    target_compile_options(as_status_tests PRIVATE -Wall -Wextra -Werror)
+    target_compile_definitions(as_status_tests PRIVATE
+            _GLIBCXX_USE_CXX11_ABI=1
+            PLUGIFY_MODULE="as_status"
+            PLUGIFY_IS_DEBUG=0
+            PLUGIFY_IS_RELEASE=1
+    )
+    set_target_properties(as_status_tests PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+endif()

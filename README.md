@@ -4,14 +4,16 @@ Player list command for the admin_system plugin, ported from the Pisex Metamod m
 
 Plugify port (fork) of **Status ([AS] Status)** by Pisex (Metamod (C++)).
 Original: https://github.com/Pisex/cs2-admin_system_modules
-The code was rewritten for Plugify / s2sdk; behaviour follows the original.
+The code was rewritten for Plugify / s2sdk.
 
 ## Requirements
 - [Plugify](https://github.com/untrustedmodders/plugify) with [s2sdk](https://github.com/untrustedmodders/plugify-plugin-s2sdk)
-- Plugify dependencies: s2sdk, admin_system, hudmenu (optional)
+- Plugin version: 1.2.0
+- Plugify dependencies: s2sdk (>=2.18.2), admin_system (>=1.0.0)
+- Self-contained s2sdk integration: uses s2sdk directly, without the pisexcompat library.
 
 ## Installation
-Download `as_status-1.0.2.zip` from Releases and extract it into `game/csgo/`.
+Download `as_status-1.2.0.zip` from Releases and extract it into `game/csgo/`.
 
 ## Building
 Requires Docker. `./build.sh` builds in the Steam Runtime 3 (sniper) SDK image; the package
